@@ -1,3 +1,6 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
 import csv
 import requests
 import time
@@ -16,9 +19,10 @@ print(f"Longitude: {longitude}")
 print(f"latitude: {latitude}")
 print(f"City: {city}")
 try:
-    api_key = "daa849dc65a47527ef5baa9c71475ff79ace392f"
+    api_key = os.getenv("CENSUS_API_KEY")
 
-    response2 = requests.get(f"https://api.census.gov/data/2022/acs/acs5?get=NAME,B01003_001E,B25077_001E,B19013_001E,B01002_001E&for=county:*&in=state:06&key=daa849dc65a47527ef5baa9c71475ff79ace392f")
+    response2 = requests.get(
+        f"https://api.census.gov/data/2022/acs/acs5?get=NAME,B01003_001E,B25077_001E,B19013_001E,B01002_001E&for=county:*&in=state:06&key={api_key}")
     data2 = response2.json()
 
 
