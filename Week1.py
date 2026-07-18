@@ -3,21 +3,24 @@ from dotenv import load_dotenv
 load_dotenv()
 import csv
 import requests
-import time
 
-zip_code = "95148"
-response = requests.get(f"https://api.zippopotam.us/us/{zip_code}")
-data = response.json()
+def get_location(zip_code):
+    response = requests.get(f"https://api.zippopotam.us/us/{zip_code}")
+    data = response.json()
 
-state = data["places"][0]["state"]
-longitude = data["places"][0]["longitude"]
-latitude = data["places"][0]["latitude"]
-city = data["places"][0]["place name"]
+    state = data["places"][0]["state"]
+    longitude = data["places"][0]["longitude"]
+    latitude = data["places"][0]["latitude"]
+    city = data["places"][0]["place name"]
+    return city, longitude, latitude, state
 
+zip_code = input("Enter zip code: ")
+city, longitude, latitude, state = get_location(zip_code)
+print(f"City: {city}")
 print(f"State: {state}")
 print(f"Longitude: {longitude}")
-print(f"latitude: {latitude}")
-print(f"City: {city}")
+print(f"Latitude: {latitude}")
+
 try:
     api_key = os.getenv("CENSUS_API_KEY")
 
