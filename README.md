@@ -1,23 +1,28 @@
-# Archer Oaks Week 1 — County Screener v0
+# Archer Oaks — County Screener
+
+## Setup
+1. Clone the repo
+2. Install dependencies:
+   pip install requests python-dotenv
+3. Copy .env.example to .env:
+   cp .env.example .env
+4. Add your Census API key to .env:
+   CENSUS_API_KEY=your_key_here
+5. Run the script:
+   python Week1.py
 
 ## What it does
-This script pulls public data about all California counties using the Zippopotam.us API
-and the US Census API. It outputs a ranked list of counties by median home value and
-writes the results to a CSV file.
-
-## How to run it
-1. Make sure Python 3 is installed
-2. Install the requests library: pip install requests
-3. Run the script: python screener.py
+Pulls public data for all California counties using the US Census API
+and ranks them by median home value. Also looks up city/state info
+for a zip code using Zippopotam.us.
 
 ## Output
-The script produces a file called counties.csv with the following columns:
-
+Produces counties.csv with these columns:
 - name: County name
 - population: Total population (Census ACS 2022)
-- median_home_value: Median home value in dollars (Census ACS 2022)
-- median_household_income: Median household income in dollars (Census ACS 2022)
-- median_age: Median age of residents (Census ACS 2022)
+- median_home_value: Median home value in dollars
+- median_household_income: Median household income in dollars
+- median_age: Median age of residents
 
 ## Top 5 Counties by Median Home Value
 1. San Mateo County — $1,441,300
