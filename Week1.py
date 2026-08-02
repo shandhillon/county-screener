@@ -30,6 +30,29 @@ def get_county_data(api_key):
     except:
         print("something went wrong, skipping")
 
+def save_to_db(data2):
+    import sqlite3
+    conn = sqlite3.connect("counties.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS counties (
+            name TEXT,
+            population INTEGER,
+            median_home_value INTEGER,
+            median_household_income INTEGER,
+            median_age REAL,
+            pulled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    for county in data2[1:]:
+        if "-666666666" in [county[1], county[2], county[3], county[4]]:
+            continue
+        cursor.execute("INSERT INTO counties VALUES (?,?,?,?,?,CURRENT_TIMESTAMP)",
+            (county[0], county[1], county[2], county[3], county[4]))
+    conn.commit()
+    conn.close()
+    print("Saved to counties.db")
+
 def main():
     zip_code = "95148"
     city, longitude, latitude, state = get_location(zip_code)
@@ -40,6 +63,8 @@ def main():
 
     api_key = os.getenv("CENSUS_API_KEY")
     data2 = get_county_data(api_key)
+
+    save_to_db(data2)
 
     counties_list = data2[1:]
     sorted_counties = sorted(counties_list, key=lambda x: int(x[2]), reverse=True)
