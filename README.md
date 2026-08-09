@@ -1,4 +1,6 @@
-# Archer Oaks — County Screener
+# County Screener
+
+A Python script that pulls US Census data for any state based on a zip code and ranks counties by median home value.
 
 ## Setup
 1. Clone the repo
@@ -11,22 +13,16 @@
 5. Run the script:
    python Week1.py
 
-## What it does
-Pulls public data for all California counties using the US Census API
-and ranks them by median home value. Also looks up city/state info
-for a zip code using Zippopotam.us.
+## How it works
+- Enter any US zip code
+- Looks up the city, state, and coordinates using Zippopotam.us
+- Converts the state to a FIPS code and pulls county data from the US Census API
+- Saves results to counties.csv and counties.db
+- Prints the top 5 counties by median home value
 
-## Output
-Produces counties.csv with these columns:
+## Output columns
 - name: County name
 - population: Total population (Census ACS 2022)
 - median_home_value: Median home value in dollars
 - median_household_income: Median household income in dollars
 - median_age: Median age of residents
-
-## Top 5 Counties by Median Home Value
-1. San Mateo County — $1,441,300
-2. San Francisco County — $1,348,700
-3. Santa Clara County — $1,316,800
-4. Marin County — $1,291,800
-5. Alameda County — $999,200
