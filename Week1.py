@@ -4,6 +4,22 @@ load_dotenv()
 import csv
 import requests
 
+STATE_FIPS = {
+    "AL": "01", "AK": "02", "AZ": "04", "AR": "05",
+    "CA": "06", "CO": "08", "CT": "09", "DE": "10",
+    "DC": "11", "FL": "12", "GA": "13", "HI": "15",
+    "ID": "16", "IL": "17", "IN": "18", "IA": "19",
+    "KS": "20", "KY": "21", "LA": "22", "ME": "23",
+    "MD": "24", "MA": "25", "MI": "26", "MN": "27",
+    "MS": "28", "MO": "29", "MT": "30", "NE": "31",
+    "NV": "32", "NH": "33", "NJ": "34", "NM": "35",
+    "NY": "36", "NC": "37", "ND": "38", "OH": "39",
+    "OK": "40", "OR": "41", "PA": "42", "RI": "44",
+    "SC": "45", "SD": "46", "TN": "47", "TX": "48",
+    "UT": "49", "VT": "50", "VA": "51", "WA": "53",
+    "WV": "54", "WI": "55", "WY": "56"
+}
+
 def get_location(zip_code):
     try:
         response = requests.get(f"https://api.zippopotam.us/us/{zip_code}")
@@ -15,10 +31,11 @@ def get_location(zip_code):
             print(f"No places found for zip code {zip_code}.")
             return None
         state = data["places"][0]["state"]
+        state_abbr = data["places"][0]["state abbreviation"]
         longitude = data["places"][0]["longitude"]
         latitude = data["places"][0]["latitude"]
         city = data["places"][0]["place name"]
-        return city, longitude, latitude, state
+        return city, longitude, latitude, state, state_abbr
     except Exception as e:
         print(f"Error looking up zip code: {e}")
         return None
@@ -26,13 +43,13 @@ def get_location(zip_code):
 def is_valid_row(county):
     return "-666666666" not in [county[1], county[2], county[3], county[4]]
 
-def get_county_data(api_key):
+def get_county_data(api_key, state_fips):
     if not api_key:
         print("No API key found. Check your .env file.")
         return None
     try:
         census_response = requests.get(
-            f"https://api.census.gov/data/2022/acs/acs5?get=NAME,B01003_001E,B25077_001E,B19013_001E,B01002_001E&for=county:*&in=state:06&key={api_key}")
+            f"https://api.census.gov/data/2022/acs/acs5?get=NAME,B01003_001E,B25077_001E,B19013_001E,B01002_001E&for=county:*&in=state:{state_fips}&key={api_key}")
         census_data = census_response.json()
         clean_data = [census_data[0]] + [row for row in census_data[1:] if is_valid_row(row)]
         with open("counties.csv", "w", newline="") as f:
@@ -67,19 +84,24 @@ def save_to_db(clean_data):
     print("Saved to counties.db")
 
 def main():
-    zip_code = "95148"
+    zip_code = input("Enter a zip code: ")
     location = get_location(zip_code)
     if location is None:
         print("Could not look up zip code, stopping.")
         return
-    city, longitude, latitude, state = location
+    city, longitude, latitude, state, state_abbr = location
     print(f"City: {city}")
     print(f"State: {state}")
     print(f"Longitude: {longitude}")
     print(f"Latitude: {latitude}")
 
+    state_fips = STATE_FIPS.get(state_abbr)
+    if state_fips is None:
+        print(f"No FIPS code found for state: {state_abbr}")
+        return
+
     api_key = os.getenv("CENSUS_API_KEY")
-    clean_data = get_county_data(api_key)
+    clean_data = get_county_data(api_key, state_fips)
 
     if clean_data is None:
         print("No county data retrieved, stopping.")
