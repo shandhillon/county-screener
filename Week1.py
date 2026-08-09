@@ -51,16 +51,17 @@ def get_county_data(api_key, state_fips):
         census_response = requests.get(
             f"https://api.census.gov/data/2022/acs/acs5?get=NAME,B01003_001E,B25077_001E,B19013_001E,B01002_001E&for=county:*&in=state:{state_fips}&key={api_key}")
         census_data = census_response.json()
-        clean_data = [census_data[0]] + [row for row in census_data[1:] if is_valid_row(row)]
-        with open("counties.csv", "w", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow(["name", "population", "median_home_value", "median_household_income", "median_age"])
-            for county in clean_data[1:]:
-                writer.writerow([county[0], county[1], county[2], county[3], county[4]])
-        return clean_data
+        return [census_data[0]] + [row for row in census_data[1:] if is_valid_row(row)]
     except Exception as e:
         print(f"something went wrong with Census API: {e}")
         return None
+
+def write_csv(clean_data, filename="counties.csv"):
+    with open(filename, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["name", "population", "median_home_value", "median_household_income", "median_age"])
+        for county in clean_data[1:]:
+            writer.writerow([county[0], county[1], county[2], county[3], county[4]])
 
 def save_to_db(clean_data):
     import sqlite3
@@ -76,9 +77,24 @@ def save_to_db(clean_data):
             pulled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    # one-time cleanup: rows inserted before this unique index existed may
+    # already have duplicates by name; keep only the most recent per name
+    cursor.execute("""
+        DELETE FROM counties
+        WHERE rowid NOT IN (SELECT MAX(rowid) FROM counties GROUP BY name)
+    """)
+    cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_counties_name ON counties(name)")
     for county in clean_data[1:]:
-        cursor.execute("INSERT INTO counties VALUES (?,?,?,?,?,CURRENT_TIMESTAMP)",
-            (county[0], county[1], county[2], county[3], county[4]))
+        cursor.execute("""
+            INSERT INTO counties (name, population, median_home_value, median_household_income, median_age, pulled_at)
+            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(name) DO UPDATE SET
+                population = excluded.population,
+                median_home_value = excluded.median_home_value,
+                median_household_income = excluded.median_household_income,
+                median_age = excluded.median_age,
+                pulled_at = excluded.pulled_at
+        """, (county[0], county[1], county[2], county[3], county[4]))
     conn.commit()
     conn.close()
     print("Saved to counties.db")
@@ -107,6 +123,7 @@ def main():
         print("No county data retrieved, stopping.")
         return
 
+    write_csv(clean_data)
     save_to_db(clean_data)
 
     counties_list = clean_data[1:]
